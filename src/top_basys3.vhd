@@ -63,12 +63,12 @@ architecture top_basys3_arch of top_basys3 is
                 o_clk    : out std_logic);
     end component;
 
-    component button_debounce is
-        Port ( i_clk   : in  STD_LOGIC;
-               i_reset : in  STD_LOGIC;
-               i_btn   : in  STD_LOGIC;
-               o_btn   : out STD_LOGIC);
-    end component;
+component button_debounce is
+    Port( clk    : in  STD_LOGIC;
+          reset  : in  STD_LOGIC;
+          button : in  STD_LOGIC;
+          action : out STD_LOGIC);
+end component;
 
     component twos_comp is
         port (
@@ -121,18 +121,19 @@ architecture top_basys3_arch of top_basys3 is
     signal w_tdm_sel    : std_logic_vector(3 downto 0);
 
     signal w_sign_digit : std_logic_vector(3 downto 0);
+    signal w_seg_dec    : std_logic_vector(6 downto 0);
 
   
 begin
 	-- PORT MAPS ----------------------------------------
 
-    u_db : button_debounce
-        port map (
-            i_clk => clk,
-            i_reset => btnU,
-            i_btn => btnC,
-            o_btn => w_btnC_db
-        );
+u_db : button_debounce
+    port map (
+        clk    => clk,
+        reset  => btnU,
+        button => btnC,
+        action => w_btnC_db
+    );
 
     u_fsm : controller_fsm
         port map (
@@ -171,7 +172,7 @@ begin
         port map (
             i_clk => w_slow_clk,
             i_reset => btnU,
-            i_D3 => w_sign_digit,
+            i_D3 => "0000",
             i_D2 => w_hund,
             i_D1 => w_tens,
             i_D0 => w_ones,
@@ -182,7 +183,7 @@ begin
     u_seg : sevenseg_decoder
         port map (
             i_Hex => w_tdm_data,
-            o_seg_n => seg
+            o_seg_n => w_seg_dec
         );
 
 	
@@ -196,9 +197,9 @@ begin
                 f_A <= (others => '0');
                 f_B <= (others => '0');
             else
-                if w_cycle = "0010" then
+                if w_cycle = "0001" then
                     f_A <= sw;
-                elsif w_cycle = "0100" then
+                elsif w_cycle = "0010" then
                     f_B <= sw;
                 end if;
             end if;
@@ -211,9 +212,9 @@ begin
                      w_result when "1000",
                      (others => '0') when others;
 
-    w_sign_digit <= "1111" when w_sign = '1' else "0000";
+    seg <= "0111111" when (w_sign = '1' and w_tdm_sel = "0111") else w_seg_dec;
 
-    an <= w_tdm_sel;
+    an <= "1111" when w_cycle = "0001" else w_tdm_sel;
     led(3 downto 0) <= w_cycle;
     led(15 downto 12) <= w_flags;
     led(11 downto 4) <= (others => '0');
