@@ -62,7 +62,12 @@ begin
             when "001" =>
                 v_temp := ('0' & unsigned(i_A)) - ('0' & unsigned(i_B));
                 w_result <= std_logic_vector(v_temp(7 downto 0));
-                w_carry <= not v_temp(8);
+
+                if unsigned(i_A) >= unsigned(i_B) then
+                    w_carry <= '1';
+                else
+                    w_carry <= '0';
+                end if;
 
             when "010" =>
                 w_result <= i_A and i_B;
